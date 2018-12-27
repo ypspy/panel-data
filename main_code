@@ -1,0 +1,13 @@
+# pandas를 활용하여 Wide format의 Panel data를 Long format으로 변경하는 코드
+import pandas as pd
+
+# Excel에 입력된 Panel data를 Dataframe으로 입력
+# Kisvalue의 Panel은 Pandas에서 읽을 수 있게 조정 필요 (ex. 헤드로를 1999 → A1999, 법인등록번호 → RegNo)
+df = pd.read_excel(r"C:\Users\yoonseok.seong\Desktop\KV_코스피_당기순이익xls.xls", sheet_name="input")
+df["id"] = df.index  # 포멧 변경 위해 df에 unique key 삽입
+
+# Panel data의 포멧 조정
+df_2 = pd.wide_to_long(df, "A", i="id", j="Year")
+
+# 포멧 변경된 dataframe을 Excel로 추출
+df_2.to_excel(r"C:\Users\yoonseok.seong\Desktop\output_당기순이익.xlsx")
