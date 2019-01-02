@@ -1,0 +1,37 @@
+"""
+This code is to extract related values from a specified forlder containing DART scraping results.
+Formerly utilizing integrated CSV library, but to enhance its conveniency I adopt external module named 'XlsxWriter(*)'
+Also notice that the body of codes for listing files came from clever answers on StackOverflow. (**)
+I'm not explaining the code line by line as almost every idea came from above refrence.
+Finally, this code works well with my scraping and analysis tools. It means you can't easily find general purpose of some functions of this code.
+
+(*) https://xlsxwriter.readthedocs.io/index.html
+(**) https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
+"""
+
+from os import listdir
+from os.path import isfile, join
+import xlsxwriter
+
+
+# Designate a folder containing results of DART scraping.
+path = r"\folder"
+
+value = [f for f in listdir(path) if isfile(join(path, f))]
+
+workbook = xlsxwriter.Workbook(r"\result.xlsx")
+worksheet = workbook.add_worksheet()
+
+row = 0
+col = 0
+
+for i in value:
+    worksheet.write(row, col, i)
+    j = i.replace(".txt", "").split("_")  # Special functions for my special purpose.
+    num = 1
+    for items in j:
+        worksheet.write(row, col + num, items)
+        num += 1
+    row += 1
+
+workbook.close()
