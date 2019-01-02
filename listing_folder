@@ -11,6 +11,7 @@ Finally, this code works well with my scraping and analysis tools. It means you 
 
 from os import listdir
 from os.path import isfile, join
+from os.path import getsize
 import xlsxwriter
 
 
@@ -27,6 +28,9 @@ col = 0
 
 for i in value:
     worksheet.write(row, col, i)
+    file_size = getsize(r"\folder" + r"\\" + i)  # This information is to calculate complexity(or readability) ot disclosure.
+    worksheet.write(row, col + 1, file_size)
+    
     j = i.replace(".txt", "").split("_")  # Special functions for my special purpose.
     num = 1
     for items in j:
