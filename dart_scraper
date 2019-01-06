@@ -1,0 +1,203 @@
+"""
+This code is to scrape designated data from DART. It enables us to get HTML-format sites.  
+"""
+
+
+import requests  # 서버에 요청하여 HTML을 픽업해오는 라이브러리
+from bs4 import BeautifulSoup  # 픽업된 HTML의 Tag를 활용할 수 있게 해준다
+import time  # Request를 루프 돌릴 때 3초간 지연을 주기 위한 목적
+import re  # scraping에 활용할 정규 표현식
+import os.path
+
+start_time_total = time.time()  # 불러온 타임을 활용해서 작업
+
+for i in range(99999):  # 99999까지 가지 않고, Loop이 끝나면 break한다.
+
+   annual_report_list = "http://dart.fss.or.kr/dsab001/search.ax"
+
+   data = {                    # 정기공시의 사업보고서의 검색값을 호출하기 위한 Ajax 호출
+          'currentPage': i+1,  # 현재 페이지 최종적으로 루프를 돌릴 대상
+          'maxResults': '15',
+          'maxLinks': '10',
+          'sort': 'date',
+          'series': 'desc',
+          'textCrpCik': '',
+          'textCrpNm': '',
+          'finalReport': 'recent',
+          'startDate': '19990101',  # 시작일
+          'endDate': '20090331',  # 종료일
+          'publicType': 'A001',  # 공시 형태. A001이 사업보고서이다.
+         }
+   u1 = requests.post(annual_report_list, data=data)
+   c1 = u1.content
+   soup = BeautifulSoup(c1, "html.parser")
+   a = soup.find_all('a')
+
+   list_type_a, list_type_b = [], []
+   for li in soup.find_all("a"):
+       a = li["href"]
+       if a[1:5] == "dsae":
+           list_type_a.append("http://dart.fss.or.kr/" + a)
+       elif a[1:5] == "dsaf":
+           list_type_b.append("http://dart.fss.or.kr/" + a)
+
+   if len(list_type_b) != 0:
+
+       for q in range(15):
+
+           try:
+               start_time = time.time()  # 불러온 타임을 활용해서 작업
+
+               u2 = requests.post(list_type_b[q], data=data)
+               b2 = u2.content
+               soup2 = BeautifulSoup(b2, "html.parser")
+               c2 = soup2.find_all('option')
+
+               result = 0
+
+               for z in c2:
+                   if z.find(text=re.compile("[^합의]연결감사보고서")):
+                       result = z
+                       break
+
+               try:
+                   audit_report_link = "http://dart.fss.or.kr/dsaf001/main.do?" + str(result.get('value'))  # 외국법인 에러 생기는 부분
+
+               # 외부감사 실시내역이 포함된 서식의 경우 재무제표+주석/ 이전 서식의 경우 재무제표
+
+                   u2 = requests.post(audit_report_link, data=data)
+                   c = u2.content
+                   soup3 = BeautifulSoup(c, "html.parser")
+                   d = soup3.text
+                   e = re.compile('재 무 제 표')
+                   f = e.search(d)
+                   g = f.start()
+                   h = d[int(g): int(g) + 200]
+
+                   aa = re.compile(r"'\S+'")  # 11/2일 수정
+                   bb = aa.findall(h)
+                   container = []
+                   for cc in bb:
+                       ii = cc.replace("'", "")
+                       container.append(ii)
+
+                   financial_statement_link = "http://dart.fss.or.kr/report/viewer.do?rcpNo=" \
+                                            + container[0] \
+                                            + "&dcmNo=" \
+                                            + container[1] \
+                                  + "&eleId=" \
+                                  + container[2] \
+                                  + "&offset=" \
+                                  + container[3] \
+                                  + "&length=" \
+                                  + container[4] \
+                                  + "&dtd=" \
+                                  + container[5]  # 에러가 나는 부분 연도별로 차이가 조금씩 있다 20090119부터 dart2.dtd 사용 // RegEx 수정
+
+                   u3 = requests.post(financial_statement_link, data=data)
+                   c = u3.content
+                   soup4 = BeautifulSoup(c, "html.parser")
+
+               # 외부감사 실시내역이 포함되지 않은 이전 서식의 경우 주석을 가져오고, 없을 때는 빠져나간다
+
+                   try:
+                       au2 = requests.post(audit_report_link, data=data)
+                       ac = au2.content
+                       asoup3 = BeautifulSoup(ac, "html.parser")
+                       ad = asoup3.text
+                       ae = re.compile('재무제표에 대한 주석')
+                       af = ae.search(ad)
+                       ag = af.start()
+                       ah = ad[int(ag): int(ag) + 200]
+
+                       aaa = re.compile(r"'\S+'")  # 11/2일 수정
+                       abb = aaa.findall(ah)
+                       acontainer = []
+                       for acc in abb:
+                           aii = acc.replace("'", "")
+                           acontainer.append(aii)
+
+                       afinancial_statement_link = "http://dart.fss.or.kr/report/viewer.do?rcpNo=" \
+                                                  + acontainer[0] \
+                                                  + "&dcmNo=" \
+                                                  + acontainer[1] \
+                                                  + "&eleId=" \
+                                                  + acontainer[2] \
+                                                  + "&offset=" \
+                                                  + acontainer[3] \
+                                                  + "&length=" \
+                                                  + acontainer[4] \
+                                                  + "&dtd=" \
+                                                  + acontainer[5]  # 에러가 나는 부분 연도별로 차이가 조금씩 있다 20090119부터 dart2.dtd 사용 // RegEx 수정
+
+                       au3 = requests.post(afinancial_statement_link, data=data)
+                       ac = au3.content
+                       asoup4 = BeautifulSoup(ac, "html.parser")
+                   except AttributeError:
+                       asoup4 = "1"
+
+               except AttributeError:  # 외국법인 에러처리
+                   soup4 = "1"  # 그냥 입력
+                   asoup4 = "1"
+
+               t1 = requests.post(list_type_a[q], data=data)
+               t2 = t1.content
+               soup_t = BeautifulSoup(t2, 'html.parser')
+
+               table = soup_t.find_all("table")[0]
+
+
+
+               i_i = soup.find_all('span', {"class", "nobr1"})
+               result_i = i_i[q].text.strip()
+
+               j = soup.find_all('td', 'cen_txt')
+               result_j = j[3 * q + 1].text.strip()  # 3n+1
+
+               k = soup.find_all(string=re.compile("보고서 "))
+               try:
+                   sk = k[q].string
+                   result_k, result_l = sk[0:5], sk[16:25]
+               except IndexError:
+                   result_k, result_l = "※", "※"
+
+               filename = result_j + "_" \
+                        + "A2" + "_" \
+                        + result_l + "_" \
+                        + result_i + "_" \
+                        + table.find_all('td')[3].text.strip() + "_" \
+                        + table.find_all('td')[5].text.strip() + "_" \
+                        + table.find_all('td')[6].text.strip() + "_" \
+                        + table.find_all('td')[13].text.strip()
+
+
+
+               fullname = re.sub("[/\*]", "", filename)  # 나리지*온, 제이엠티/JMT 때문에 넣었음
+               path = r'/A2'
+               fullname = os.path.join(path, fullname)
+
+               file = open(fullname + ".txt", "w", encoding="utf-8")
+
+               try:
+
+                   for n in soup4.contents:
+                       file.write(str(n))
+               except AttributeError:
+                   None
+
+               try:
+                   for m in asoup4.contents:
+                       file.write(str(m))
+               except AttributeError:
+                   None
+
+               file.close()
+
+               time.sleep(2)  
+               print("--- %s seconds ---" % (time.time() - start_time))
+           except IndexError:
+               break
+   else:
+       break
+
+print("--- %s seconds ---" % (time.time() - start_time_total))
