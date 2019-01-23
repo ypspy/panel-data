@@ -8,3 +8,6 @@ Also including various minor processing codes used for various purposes.
 Here's the indexing rule:
 A. DART scraping
 B. Indexing collected data in a specified folder
+C-1. Analytics with Python
+C-2. Analytics with R
+D. Other data manipulation
