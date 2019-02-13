@@ -16,11 +16,11 @@ import xlsxwriter
 
 
 # Designate a folder containing results of DART scraping.
-path = r"\folder"
+path = r"\folder"  
 
 value = [f for f in listdir(path) if isfile(join(path, f))]
 
-workbook = xlsxwriter.Workbook(r"\result.xlsx")
+workbook = xlsxwriter.Workbook(r"\result.xlsx")  # Also need to designate target location.
 worksheet = workbook.add_worksheet()
 
 row = 0
@@ -28,6 +28,8 @@ col = 0
 
 for i in value:
     worksheet.write(row, col, i)
+    # can be deleted for general purposes from here 
+    
     file_size = getsize(r"\folder" + r"\\" + i)  # This information is to calculate complexity(or readability) ot disclosure.
     worksheet.write(row, col + 1, file_size)
     
@@ -36,6 +38,9 @@ for i in value:
     for items in j:
         worksheet.write(row, col + num, items)
         num += 1
+    
+    # To here
+    
     row += 1
 
 workbook.close()
